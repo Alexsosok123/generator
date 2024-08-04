@@ -1,7 +1,9 @@
 const axios = require('axios');
+const fs = require('fs');
 
 const appToken = 'd28721be-fd2d-4b45-869e-9f253b554e50';
 const promoId = '43e35910-c168-4634-ad4f-52fd764a843f';
+const filePath = 'promo.txt';
 
 async function generateClientId() {
     const timestamp = Date.now();
@@ -67,7 +69,6 @@ async function createCode(token) {
                     'Content-Type': 'application/json; charset=utf-8',
                 }
             });
-
         } catch (error) {
             console.error('Ошибка при создании кода:', error.message);
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -78,18 +79,28 @@ async function createCode(token) {
 }
 
 function generateRandomUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0,
-            v = c === 'x' ? r : (r & 0x3 | 0x8);
+              v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
+    });
+}
+
+async function saveCodeToFile(code) {
+    fs.appendFile(filePath, code + '\n', (err) => {
+        if (err) {
+            console.error('Ошибка при сохранении кода в файл:', err.message);
+        }
     });
 }
 
 async function main() {
     try {
-        for (let i = 0; i <= 39; i++) {
-            gen()
+        const tasks = [];
+        for (let i = 0; i < 34; i++) {
+            tasks.push(gen());
         }
+        await Promise.all(tasks);
     } catch (error) {
         console.error('Ошибка:', error.response ? error.response.data : error.message);
     }
@@ -97,11 +108,10 @@ async function main() {
 
 async function gen() {
     const token = await loginClient();
-    console.log(token)
-
     await registerEvent(token);
-    var codeData = await createCode(token);
+    const codeData = await createCode(token);
     console.log(codeData);
+    await saveCodeToFile(codeData);
 }
 
 main();
